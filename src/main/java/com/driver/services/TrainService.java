@@ -26,7 +26,22 @@ public class TrainService {
         //and route String logic to be taken from the Problem statement.
         //Save the train and return the trainId that is generated from the database.
         //Avoid using the lombok library
-        return null;
+        Train train = new Train();
+        train.setNoOfSeats(trainEntryDto.getNoOfSeats());
+
+        List<Station> list = trainEntryDto.getStationRoute();
+        String route = "";
+
+        for(int i=0;i<list.size();i++){
+            if(i==list.size()-1)
+                route += list.get(i);
+            else
+                route += list.get(i) + ",";
+        }
+        train.setRoute(route);
+
+        train.setDepartureTime(trainEntryDto.getDepartureTime());
+        return trainRepository.save(train).getTrainId();
     }
 
     public Integer calculateAvailableSeats(SeatAvailabilityEntryDto seatAvailabilityEntryDto){
@@ -51,7 +66,37 @@ public class TrainService {
         //  in a happy case we need to find out the number of such people.
 
 
-        return 0;
+        Train train=trainRepository.findById(trainId).get();
+        String reqStation=station.toString();
+        String arr[]=train.getRoute().split(",");
+        boolean found=false;
+
+        for(String s:arr){
+            if(s.equals(reqStation)){
+                found=true;
+                break;
+            }
+        }
+        //if the trainId is not passing through that station
+
+        if(found==false){
+            throw new Exception("Train is not passing from this station");
+        }
+
+        int noOfPassengers=0;
+        //throw new Exception("Train is not passing from this station");
+        List<Ticket>ticketList= train.getBookedTickets();
+        for(Ticket ticket:ticketList){
+            if(ticket.getFromStation().toString().equals(reqStation)){
+                noOfPassengers+=ticket.getPassengersList().size();
+            }
+        }
+
+
+        //  in a happy case we need to find out the number of such people.
+
+
+        return noOfPassengers;
     }
 
     public Integer calculateOldestPersonTravelling(Integer trainId){
@@ -60,7 +105,20 @@ public class TrainService {
         //We need to find out the age of the oldest person that is travelling the train
         //If there are no people travelling in that train you can return 0
 
-        return 0;
+        Train train=trainRepository.findById(trainId).get();
+        //We need to find out the age of the oldest person that is travelling the train
+        int age= Integer.MIN_VALUE;
+        //If there are no people travelling in that train you can return 0
+        if(train.getBookedTickets().size()==0)return 0;
+
+        List<Ticket>ticketList=train.getBookedTickets();
+        for(Ticket ticket:ticketList){
+            List<Passenger>passengers=ticket.getPassengersList();
+            for(Passenger passenger:passengers){
+                age=Math.max(age,passenger.getAge());
+            }
+        }
+        return age;
     }
 
     public List<Integer> trainsBetweenAGivenTime(Station station, LocalTime startTime, LocalTime endTime){
